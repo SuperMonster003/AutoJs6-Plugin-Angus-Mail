@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="plugin_description">يرسل البريد ويستقبله ويبحث فيه ويراقبه عبر IMAP و POP3 و SMTP</string>
+</resources>

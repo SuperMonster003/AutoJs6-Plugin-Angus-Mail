@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="plugin_description">通过 IMAP, POP3 和 SMTP 收发, 搜索和监听邮件</string>
+</resources>

@@ -1,0 +1,252 @@
+<!--suppress HtmlDeprecatedAttribute, HttpUrlsUsage -->
+
+<div align="center">
+  <p>
+    <picture>
+      <source srcset="https://github.com/SuperMonster003/AutoJs6-Plugin-Angus-Mail/blob/master/app/src/main/res/mipmap-night/ic_launcher.png?raw=true" media="(prefers-color-scheme: dark)" />
+      <img src="https://github.com/SuperMonster003/AutoJs6-Plugin-Angus-Mail/blob/master/app/src/main/res/mipmap/ic_launcher.png?raw=true" alt="autojs6-plugin-angus-mail-ic-launcher" border="0" width="128" />
+    </picture>
+  </p>
+
+  <p>讓 AutoJs6 腳本透過 IMAP, POP3 和 SMTP 收發, 搜尋和監聽郵件</p>
+
+  <p>
+    <a href="https://github.com/SuperMonster003/AutoJs6-Plugin-Angus-Mail/releases"><img alt="GitHub release (latest by date)" src="https://img.shields.io/github/v/release/SuperMonster003/AutoJs6-Plugin-Angus-Mail?label=Release"/></a>
+    <a href="https://github.com/SuperMonster003/AutoJs6-Plugin-Angus-Mail/issues"><img alt="GitHub closed issues" src="https://img.shields.io/github/issues/SuperMonster003/AutoJs6-Plugin-Angus-Mail?color=A24232&label=Issues"/></a>
+    <a href="https://github.com/SuperMonster003/AutoJs6-Plugin-Angus-Mail/blob/master/LICENSE"><img alt="GitHub License" src="https://img.shields.io/github/license/SuperMonster003/AutoJs6-Plugin-Angus-Mail?color=534BAE&label=License"/></a>
+  </p>
+</div>
+
+******
+
+### 語言
+
+******
+
+目前 README.md 支援以下語言:
+
+- [简体中文 [zh-Hans]](https://github.com/SuperMonster003/AutoJs6-Plugin-Angus-Mail/blob/master/.readme/README-zh-Hans.md)
+- 繁體中文 (香港) [zh-Hant-HK] # 目前
+- [繁體中文 (台灣) [zh-Hant-TW]](https://github.com/SuperMonster003/AutoJs6-Plugin-Angus-Mail/blob/master/.readme/README-zh-Hant-TW.md)
+- [English [en]](https://github.com/SuperMonster003/AutoJs6-Plugin-Angus-Mail/blob/master/.readme/README-en.md)
+- [Français [fr]](https://github.com/SuperMonster003/AutoJs6-Plugin-Angus-Mail/blob/master/.readme/README-fr.md)
+- [Español [es]](https://github.com/SuperMonster003/AutoJs6-Plugin-Angus-Mail/blob/master/.readme/README-es.md)
+- [日本語 [ja]](https://github.com/SuperMonster003/AutoJs6-Plugin-Angus-Mail/blob/master/.readme/README-ja.md)
+- [한국어 [ko]](https://github.com/SuperMonster003/AutoJs6-Plugin-Angus-Mail/blob/master/.readme/README-ko.md)
+- [Русский [ru]](https://github.com/SuperMonster003/AutoJs6-Plugin-Angus-Mail/blob/master/.readme/README-ru.md)
+- [العربية [ar]](https://github.com/SuperMonster003/AutoJs6-Plugin-Angus-Mail/blob/master/.readme/README-ar.md)
+
+******
+
+### 簡介
+
+******
+
+Angus Mail 為 AutoJs6 腳本提供全域物件 `mail`, 用於傳送郵件, 列出和搜尋郵箱, 讀取內文, 下載附件, 管理標記與資料夾, 以及監聽資料夾中的新郵件. 它基於 Jakarta Mail 的參考實作 [Eclipse Angus Mail](https://eclipse-ee4j.github.io/angus-mail/) 2.0.5, 透過 TLS 使用 IMAP, POP3 和 SMTP 協定.
+
+全部郵件流量都在插件程序內完成. AutoJs6 透過 Binder 服務發現插件, 交出腳本提供的帳戶 (或插件設定頁中儲存的別名), 並接收 JSON 結果與附件串流; 宿主本身不含任何郵件程式碼. 除非你選擇在插件中儲存帳戶, 憑證只在工作階段生命週期內駐留記憶體.
+
+******
+
+### 目前狀態
+
+******
+
+版本 1.0.0 處於開發階段: 倉庫骨架, 帶本機伺服器測試的郵件核心, 以及供 AutoJs6 插件中心識別的插件身份已經就緒; Binder 契約, 腳本 API 與設定頁按 [ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-Angus-Mail/blob/master/ROADMAP.md) 的階段推進. 需要 AutoJs6 6.8.0 (組建 5281) 或更高版本.
+
+******
+
+### 功能
+
+******
+
+外掛程式提供以下能力:
+
+- 寄信: 純文字或 HTML, 多個收件人, 附件與內嵌圖片, 自訂信頭與優先級; 服務商不自動儲存已寄郵件時由插件寫入伺服器.
+- 收信: 按頁列出資料夾, 在伺服器端搜尋 (服務商拒絕非 ASCII 搜尋時回退到用戶端過濾), 讀取文字與 HTML 內文, 並把附件直接下載到腳本工作目錄.
+- 整理: 標記已讀或星標, 移動, 複製, 刪除, 清除, 以及建立, 重新命名或刪除資料夾; POP3 帳戶獲得唯讀子集.
+- 監聽: 在腳本執行期間透過 IMAP IDLE 接收新郵件事件, 伺服器或 POP3 帳戶不支援時回退為輪詢.
+- 服務商: 內建 Gmail, Outlook.com, Microsoft 365, QQ, 163, 126, iCloud, Yahoo, Sina 和 Aliyun 預設, 自動填入主機, 連接埠與加密方式; 任何欄位都可為其他伺服器覆蓋.
+- 認證: 密碼與服務商授權碼, 或由腳本提供並附帶重新整理回呼的 XOAUTH2 存取權杖.
+
+******
+
+### 使用方法
+
+******
+
+1. 在安裝了 AutoJs6 組建 5281 (6.8.0) 或更高版本的裝置上, 從 [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-Angus-Mail/releases) 安裝插件 APK.
+2. 開啟 AutoJs6 插件中心, 確認 `Angus Mail` 已被識別並啟用它.
+3. 準備帳戶: 在郵件服務商的設定中開啟 IMAP 或 POP3, 並取得授權碼或應用程式專用密碼 (QQ, 163, 126, Gmail, iCloud), 或 OAuth 2.0 存取權杖 (Outlook.com).
+4. 在腳本中呼叫 `mail.connect(...)`, 或在插件設定頁儲存帳戶後以別名連線.
+
+******
+
+### 快速開始
+
+******
+
+一個寄送報表, 讀取帶附件的未讀郵件並等待驗證碼的腳本:
+
+```js
+let client = mail.connect({ provider: 'qq', address: 'me@qq.com', password: 'authorization-code' });
+
+client.send({ to: 'you@example.com', subject: 'Report', text: 'See the attachment', attachments: ['/sdcard/report.xlsx'] });
+
+client.fetch({ unseenOnly: true, limit: 10 }).forEach(m => {
+    let full = m.load();
+    full.attachments.forEach(a => a.download(files.join(files.cwd(), 'mail-attachments')));
+    client.markRead(m);
+});
+
+let watch = client.watch('INBOX', { fetchBody: true });
+watch.on('message', m => { if (/code/i.test(m.subject)) console.log(m.text); });
+```
+
+******
+
+### 權限與安全
+
+******
+
+外掛遵循明確的邊界:
+
+- Binder 入口受 `org.autojs.permission.PLUGIN` 簽名權限保護, 只有 AutoJs6 能夠存取; 插件不匯出其他元件.
+- INTERNET 權限只用於腳本指定伺服器的 IMAP, POP3 和 SMTP 連線; 插件不發起其他請求, 也不收集任何資料.
+- 密碼與權杖從腳本到插件經 Binder 的專用欄位傳遞, 不會出現在日誌, JSON 文件, 錯誤訊息或當機報告中, 且只在工作階段生命週期內駐留記憶體. 設定頁儲存的帳戶由 Android Keystore 金鑰加密, 並排除在備份之外.
+- 連線預設使用 TLS (按服務商要求選擇 SSL 或 STARTTLS); 明文連線與自簽憑證必須為每個帳戶明確宣告.
+
+請只從官方 [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-Angus-Mail/releases) 頁面或 AutoJs6 外掛中心取得外掛. 來源不明的安裝套件即使版本號相同, 也可能無法通過主程式驗證或帶來風險.
+
+******
+
+### 外掛介面
+
+******
+
+以下資訊面向 AutoJs6 主程式與外掛開發者; 主程式使用這些識別碼發現外掛並協商相容性:
+
+```text
+application id: io.github.supermonster003.autojs6.plugin.angus.mail
+plugin id: angus-mail
+engine: mail
+variant: default
+service action: org.autojs.plugin.MAIL
+service category: mail
+info action: org.autojs.plugin.INFO
+aidl interface: org.autojs.plugin.mail.api.IMailPlugin
+minimum host build: 5281 (6.8.0)
+```
+
+`AngusMailPluginService` 實作宿主 mail-api 契約 `org.autojs.plugin.mail.api.IMailPlugin`, 回應 `org.autojs.plugin.MAIL` (category `mail`). `AngusMailPluginInfoService` 以 PluginInfo 回應 `org.autojs.plugin.INFO`. `WakeActivity` 供宿主啟動插件.
+
+******
+
+### 路線圖
+
+******
+
+外掛的規劃與進度以可勾選清單的形式維護在 ROADMAP.md 中, 按階段組織並附有驗收條件與證據等級. 未勾選條目表達的是意圖而非目前能力; 歡迎透過 Issues 討論.
+
+- [檢視 ROADMAP.md](https://github.com/SuperMonster003/AutoJs6-Plugin-Angus-Mail/blob/master/ROADMAP.md)
+
+******
+
+### 發行歷史
+
+******
+
+#### v1.0.0
+
+_2026/09/18_
+
+- `提示` P0 開發預覽: 倉庫骨架, 帶本機伺服器測試的郵件核心, 以及供 AutoJs6 插件中心識別的插件身份. Binder 契約, 腳本 API 與設定頁按 ROADMAP.md 的階段推進.
+- `新增` 插件標識 `angus-mail` (engine `mail`), 含 INFO 服務, Wake Activity 以及供宿主發現的 `org.autojs.plugin.MAIL` 服務骨架
+- `新增` 基於 Eclipse Angus Mail 的郵件核心: IMAP / POP3 / SMTP 的工作階段屬性 (SSL 或 STARTTLS), 密碼與 XOAUTH2 認證, SMTP 寄信與 IMAP 收件匣列表, 已在本機 GreenMail 伺服器上驗證
+- `新增` 10 種語言的 README, 插件中心說明與更新日誌
+- `依賴` Eclipse Angus Mail 2.0.5 (`org.eclipse.angus:jakarta.mail`) 及 Angus Activation 2.0.3 與 Jakarta Activation API 2.1.4
+- `依賴` 附加 GreenMail 2.1.13 用於 JVM 郵件核心測試 (僅測試範圍)
+- `依賴` 附加 `common-plugin-api.aar` (AutoJs6 模組 `plugin-api/common-plugin-api`, 宿主組建 6.8.0 / 5281, MPL 2.0) 作為共用插件契約, 並在 `locks/host-api-aars.lock` 中鎖定雜湊
+
+##### 更多發行歷史
+
+* [CHANGELOG.md](https://github.com/SuperMonster003/AutoJs6-Plugin-Angus-Mail/blob/master/app/src/main/assets/doc/CHANGELOG-zh-Hant-HK.md)
+
+******
+
+### 建置與驗證
+
+******
+
+本節面向希望從原始碼建置外掛的開發者; 一般使用者直接安裝 Releases 頁面的預建 APK 即可.
+
+建置 Debug APK:
+
+```powershell
+.\gradlew.bat :app:assembleDebug
+```
+
+執行 JVM 單元測試並建置 instrumentation 測試 APK:
+
+```powershell
+.\gradlew.bat :mail-core:test :app:testDebugUnitTest :app:assembleDebugAndroidTest
+```
+
+建置 Release APK:
+
+```powershell
+.\gradlew.bat :app:assembleRelease
+```
+
+收集發佈產物並在檔案名稱後附加版本與 CRC32 摘要:
+
+```powershell
+.\gradlew.bat :app:appendDigestToReleasedFiles
+```
+
+驗證多語言文件來源與生成產物是否同步 (CI 同樣執行此檢查):
+
+```powershell
+py .python\generate_markdown.py --check
+```
+
+建置需要 JDK 21 或更高版本以及 Android SDK 37; Gradle 與外掛版本由 `version.properties` 和 `io.github.supermonster003.autojs6-platform-versions` 統一管理.
+
+******
+
+### 本地化與文件生成
+
+******
+
+```text
+.readme/common.json
+.readme/lang_*.json
+.readme/template_readme.md
+.readme/template_plugin_instruction.md
+.changelog/lang_*.json
+.changelog/template_changelog.md
+.python/generate_markdown.py
+app/src/main/assets/doc/CHANGELOG-*.md
+app/src/main/res/raw-*/plugin_instruction.md
+```
+
+`.readme/` 與 `.changelog/` 下的語言 JSON 檔案是 README, 外掛中心說明與更新日誌的唯一文案來源. 請始終修改這些 JSON 來源檔案並重新執行 `py .python/generate_markdown.py`; 生成的 README, `plugin_instruction.md` 與更新日誌產物不得手動編輯. 執行 `py .python/generate_markdown.py --check` 可驗證全部生成產物.
+
+******
+
+### 授權條款
+
+******
+
+專案程式碼基於 [Mozilla Public License 2.0](https://github.com/SuperMonster003/AutoJs6-Plugin-Angus-Mail/blob/master/LICENSE) 授權. 第三方元件及其授權條款列於 [第三方聲明](https://github.com/SuperMonster003/AutoJs6-Plugin-Angus-Mail/blob/master/THIRD_PARTY_NOTICES.md).
+
+******
+
+### 相關連結
+
+******
+
+- AutoJs6 專案: https://github.com/SuperMonster003/AutoJs6
+- AutoJs6 文件: https://docs.autojs6.com
+- Eclipse Angus Mail: https://eclipse-ee4j.github.io/angus-mail/
+- 第三方聲明: https://github.com/SuperMonster003/AutoJs6-Plugin-Angus-Mail/blob/master/THIRD_PARTY_NOTICES.md

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="plugin_description">Envoie, reçoit, recherche et surveille le courrier via IMAP, POP3 et SMTP</string>
+</resources>

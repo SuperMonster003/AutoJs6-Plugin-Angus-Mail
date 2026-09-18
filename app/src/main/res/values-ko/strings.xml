@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="plugin_description">IMAP, POP3, SMTP로 메일을 보내고 받고 검색하고 감시합니다</string>
+</resources>
