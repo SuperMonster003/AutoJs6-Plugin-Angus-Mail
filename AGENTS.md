@@ -162,7 +162,7 @@ AutoJs6-Plugin-Angus-Mail/
 
 - 公共常量, op 名, key, capability key, 错误码, ID, action 和 category MUST 集中在宿主 `mail-api` 契约模块 (AAR) 与 `AngusMailPlugin` 中, 禁止散落字符串字面量.
 - 请求 / 响应 / 事件为 `Bundle` 固定 key 下的 JSON 文档 (路线图 D14); 所有 Binder 输入 MUST 做边界校验 (长度, 大小, key, 枚举, 索引, 描述符数量), 上限常量集中定义并与路线图附录 B.5 一致.
-- 凭据只经 Binder 的专用 key 传递 (`KEY_SECRET`, `KEY_ACCESS_TOKEN`), MUST NOT 放进 JSON 文档, 日志, 异常消息或错误 `details`.
+- 凭据只经 Binder 的专用 key 传递 (`KEY_SECRET_PASSWORD`, `KEY_SECRET_ACCESS_TOKEN`), MUST NOT 放进 JSON 文档, 日志, 异常消息或错误 `details`; `MailAccountOptions` 在账户 JSON 里遇到 `password` / `accessToken` 等字段直接拒绝, 所有离开插件进程的文本经 `Redactor` 脱敏.
 - 已发布 AIDL 演进时保持旧 transaction 顺序, 末尾追加, 通过契约版本协商; op 表追加不改 AIDL; 破坏性重设计同步升级宿主与插件.
 - 不在 Binder 主路径执行无界网络访问或不可取消的长耗时初始化; 会话内操作在插件侧串行, 每个请求有 `requestId`, 超时与取消; 服务被回收, 首次绑定, 重复绑定和并发调用都应保持确定行为.
 
@@ -225,7 +225,7 @@ AutoJs6-Plugin-Angus-Mail/
 
 ### 15.1 `:mail-core` JVM 测试 (GreenMail)
 
-- 每个会话 / 收发 / MIME / 查询 / 监听逻辑 MUST 有 GreenMail 覆盖 (`com.icegreen:greenmail`, 与 Angus Mail 2.0.5 对齐); 测试用 `ServerSetupTest` 的非特权端口 (3025 / 3143 / 3110 及 SSL 变体), 每个测试类自行 `start()` / `stop()`, 不共享服务器实例.
+- 账户选项 / 预设 / 错误映射 / 连接守卫有纯 JVM 用例 (`MailAccountOptionsTest`, `ProviderPresetsTest`, `ExceptionMapperTest`, `ConnectionGuardTest`); 每个会话 / 收发 / MIME / 查询 / 监听逻辑 MUST 有 GreenMail 覆盖 (`com.icegreen:greenmail`, 与 Angus Mail 2.0.5 对齐); 测试用 `ServerSetupTest` 的非特权端口 (3025 / 3143 / 3110 及 SSL 变体), 每个测试类自行 `start()` / `stop()`, 不共享服务器实例.
 - MIME 夹具放在 `mail-core/src/test/resources/mime/*.eml`; 夹具不得含真实邮箱地址, 真实姓名或真实服务器响应.
 - GreenMail 通过 `exclude(group = "jakarta.mail", module = "jakarta.mail-api")` 引入, 以免与 Angus bundle 重复; SLF4J 只绑定 `slf4j-nop`.
 - 真实服务商往返 (QQ / 163 / Gmail / Outlook.com 等) 不进入 JVM 测试; 见 15.3.
@@ -236,7 +236,9 @@ AutoJs6-Plugin-Angus-Mail/
 - `ManifestContractTest`: Manifest 与 `AngusMailPlugin` 常量一致 (权限集合精确, queries, Wake Activity, 两个服务的 action / category / 进程 / requiresHostVersion, 无 receiver / provider).
 - `ApplicationTextPunctuationTest`: 打包与生成文本只使用 ASCII 标点.
 - `StringResourceParityTest`: 10 语言键集合一致, 按名排序, `plugin_description` 无句尾标点, `locales_config.xml` 与语言集合一致.
-- 路线图 P2 起补充: op 表快照, JSON 编解码, Limits, 错误映射, 账户存储编解码.
+- `MailCoreContractParityTest`: `:mail-core` 镜像的错误码 (`MailErrorCode`), 上限 (`MailLimits`), 枚举 id 与能力值与 `mail-api` 契约逐项一致 (`:mail-core` 不能依赖 AAR, 镜像靠这个测试守住).
+- `RequestRouterTest`: op 表快照, 已实现 / 待实现 / 未知 op 的三态与 `MailContract.OPS` 一致.
+- 路线图 P2.2 起补充: JSON 编解码, Limits, 账户存储编解码.
 
 ### 15.3 Android instrumentation (`app/src/androidTest`)
 
