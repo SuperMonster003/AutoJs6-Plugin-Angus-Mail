@@ -163,6 +163,7 @@ AutoJs6-Plugin-Angus-Mail/
 - 公共常量, op 名, key, capability key, 错误码, ID, action 和 category MUST 集中在宿主 `mail-api` 契约模块 (AAR) 与 `AngusMailPlugin` 中, 禁止散落字符串字面量.
 - 请求 / 响应 / 事件为 `Bundle` 固定 key 下的 JSON 文档 (路线图 D14); 所有 Binder 输入 MUST 做边界校验 (长度, 大小, key, 枚举, 索引, 描述符数量), 上限常量集中定义并与路线图附录 B.5 一致.
 - 凭据只经 Binder 的专用 key 传递 (`KEY_SECRET_PASSWORD`, `KEY_SECRET_ACCESS_TOKEN`), MUST NOT 放进 JSON 文档, 日志, 异常消息或错误 `details`; `MailAccountOptions` 在账户 JSON 里遇到 `password` / `accessToken` 等字段直接拒绝, 所有离开插件进程的文本经 `Redactor` 脱敏.
+- 描述符是插件的副本 (路线图 B.3): 只有 `MailContract.OPS_WITH_SOURCES` / `OPS_WITH_SINK` 的 op 接受描述符, 其余 op 携带描述符 -> `INVALID_ARGUMENT`, 数量超过 `MAX_DESCRIPTORS` -> `LIMIT_EXCEEDED`; 校验在会话线程且在路由之后 (未知 / 未实现 op 的错误优先), 附件描述符 MUST 是可 seek 的文件 (`DescriptorSource` 每次 `open()` 都 `dup` + `lseek(0)`, 因为同一封邮件为 SMTP 与 IMAP `APPEND` 各序列化一次), 全部副本 MUST 在 `onResult` 前关闭, 无论成功与否.
 - 已发布 AIDL 演进时保持旧 transaction 顺序, 末尾追加, 通过契约版本协商; op 表追加不改 AIDL; 破坏性重设计同步升级宿主与插件.
 - 不在 Binder 主路径执行无界网络访问或不可取消的长耗时初始化; 会话内操作在插件侧串行, 每个请求有 `requestId`, 超时与取消; 服务被回收, 首次绑定, 重复绑定和并发调用都应保持确定行为.
 
@@ -226,6 +227,7 @@ AutoJs6-Plugin-Angus-Mail/
 ### 15.1 `:mail-core` JVM 测试 (GreenMail)
 
 - 账户选项 / 预设 / 错误映射 / 连接守卫有纯 JVM 用例 (`MailAccountOptionsTest`, `ProviderPresetsTest`, `ExceptionMapperTest`, `ConnectionGuardTest`); 每个会话 / 收发 / MIME / 查询 / 监听逻辑 MUST 有 GreenMail 覆盖 (`com.icegreen:greenmail`, 与 Angus Mail 2.0.5 对齐); 测试用 `ServerSetupTest` 的非特权端口 (3025 / 3143 / 3110 及 SSL 变体), 每个测试类自行 `start()` / `stop()`, 不共享服务器实例.
+- 发信链路 (路线图 P2.2) 的用例: `OutgoingMessageParserTest` (字段校验, 上限, 头注入, 描述符绑定, 文件名清洗), `MessageComposerTest` (MIME 树与头部编码, 在序列化后的字节上断言), `SmtpSendGreenMailTest` (`MailSession.send` / `append` 对 GreenMail: 投递, Bcc 不外泄, `saveToSent` 三态与 `sentCopy`, 草稿 APPEND 与 UID, 错误码).
 - MIME 夹具放在 `mail-core/src/test/resources/mime/*.eml`; 夹具不得含真实邮箱地址, 真实姓名或真实服务器响应.
 - GreenMail 通过 `exclude(group = "jakarta.mail", module = "jakarta.mail-api")` 引入, 以免与 Angus bundle 重复; SLF4J 只绑定 `slf4j-nop`.
 - 真实服务商往返 (QQ / 163 / Gmail / Outlook.com 等) 不进入 JVM 测试; 见 15.3.
@@ -237,14 +239,14 @@ AutoJs6-Plugin-Angus-Mail/
 - `ApplicationTextPunctuationTest`: 打包与生成文本只使用 ASCII 标点.
 - `StringResourceParityTest`: 10 语言键集合一致, 按名排序, `plugin_description` 无句尾标点, `locales_config.xml` 与语言集合一致.
 - `MailCoreContractParityTest`: `:mail-core` 镜像的错误码 (`MailErrorCode`), 上限 (`MailLimits`), 枚举 id 与能力值与 `mail-api` 契约逐项一致 (`:mail-core` 不能依赖 AAR, 镜像靠这个测试守住).
-- `RequestRouterTest`: op 表快照, 已实现 / 待实现 / 未知 op 的三态与 `MailContract.OPS` 一致.
+- `RequestRouterTest`: op 表快照, 已实现 / 待实现 / 未知 op 的三态与 `MailContract.OPS` 一致; 描述符只属于 `OPS_WITH_SOURCES` / `OPS_WITH_SINK`; `mail.send` / `messages.append` 的参数错误先于任何连接.
 - 路线图 P2.2 起补充: JSON 编解码, Limits, 账户存储编解码.
 
 ### 15.3 Android instrumentation (`app/src/androidTest`)
 
-- `AngusMailPluginContractTest` MUST 覆盖: Wake Activity 契约, INFO 服务发现与真实 `getInfo()` 往返 (包版本, 本地化描述, ID / engine / variant, 显式空 `supportedAbis`, `REQUIRES_HOST_VERSION`), `AngusMailPluginService` 发现, 显式绑定与 Binder descriptor.
+- `AngusMailPluginContractTest` MUST 覆盖: Wake Activity 契约, INFO 服务发现与真实 `getInfo()` 往返 (包版本, 本地化描述, ID / engine / variant, 显式空 `supportedAbis`, `REQUIRES_HOST_VERSION`), `AngusMailPluginService` 发现, 显式绑定与 Binder descriptor, `IMailSession.call` 的会话信封与描述符所有权 (非传输 op 携带描述符, 越界 `descriptorIndex`, 管道, 超过 `MAX_DESCRIPTORS`, 副本在 `onResult` 前关闭).
 - `MailCoreDeviceTest` MUST 覆盖: Angus 处理器在 APK 内可解析, MIME 组装 / 解析在设备运行时往返; 账户往返只在经 instrumentation 参数 (`mailAddress`, `mailSecret`, `mailImapHost`, `mailSmtpHost` 等) 提供账户时执行, 否则 `Assume` 跳过. 无真实账户时 SHOULD 用开发机上的 GreenMail standalone (与 `:mail-core` 测试同版本, `adb reverse` 映射 3025 / 3143 端口, `mailTls=none`) 完成一次设备端往返 (命令见该测试的 KDoc); 真实服务商未验证时在路线图记录 "未执行真实服务商验证".
-- 真实测试账户放在仓库根 `mail-test-accounts.properties` (Git 忽略) 或命令行参数中, MUST NOT 写入源码, 测试资源, Gradle 脚本, CI 配置或提交信息; 测试输出与日志只打印地址域名与耗时, 不打印密码, 令牌或邮件正文.
+- 真实测试账户放在仓库根 `mail-test-accounts.properties` (Git 忽略) 或命令行参数中, MUST NOT 写入源码, 测试资源, Gradle 脚本, CI 配置或提交信息; 测试输出与日志只打印地址域名与耗时, 不打印密码, 令牌或邮件正文. `.python/run_real_account.py <QQ_A|QQ_B|GMAIL_A> <serial> [--peer QQ_B] [--save-sent true|false] [--append Drafts] [--debug] [--release]` 读取该文件并屏蔽输出中的全部密钥 (`report leak check: clean` 是每次运行的必要条件); 个人地址不得写入文档, 证据只记录服务商与域名.
 - 路线图 P2 起补充: 真实 `IMailPlugin` / `IMailSession` 往返, 非宿主调用被拒, 大小上限与错误传播, 绑定 / 解绑 / 进程重建不泄漏.
 - 有设备或模拟器时执行 `:app:connectedDebugAndroidTest`; 性能度量与正确性测试分开.
 
