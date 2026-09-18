@@ -25,7 +25,7 @@
 | 服务发现 action / category | `org.autojs.plugin.MAIL` / `mail` |
 | INFO 服务 | `AngusMailPluginInfoService`, action `org.autojs.plugin.INFO`, category `mail` |
 | 专用 API | `mail-api` (宿主 `plugin-api/mail-api`, AIDL 包 `org.autojs.plugin.mail.api`, Binder descriptor `org.autojs.plugin.mail.api.IMailPlugin`; 路线图 P1.1 落地后以 AAR 形式进入 `libs/`) |
-| 最低宿主 versionCode | `AngusMailPlugin.REQUIRED_HOST_VERSION` (当前 5281 为骨架开发所对的宿主构建, 属临时值; 路线图 P1.4 回填为交付 mail 契约模块的宿主构建) |
+| 最低宿主 versionCode | `AngusMailPlugin.REQUIRED_HOST_VERSION` (5282, 交付 `mail-api` 契约模块与宿主客户端的 6.8.0 宿主构建; 路线图 P1.4 回填, 与 `MailIds.REQUIRED_HOST_VERSION_CODE` 一致) |
 | 邮件库 | Eclipse Angus Mail `org.eclipse.angus:jakarta.mail` 2.0.5 + `angus-activation` 2.0.3 + `jakarta.activation-api` 2.1.4 (路线图 D2) |
 | 平台版本插件 | `io.github.supermonster003.autojs6-platform-versions` 1.8.2 |
 | 发布文件名 | `autojs6-plugin-angus-mail-v{VERSION_NAME}-{CRC32}.apk` (单 APK) |
@@ -156,7 +156,7 @@ AutoJs6-Plugin-Angus-Mail/
 
 - `AngusMailPluginRuntimeInfo` 是纯数据映射, `AngusMailPluginInfo.kt` 负责 Android 侧读取 (包版本, 本地化描述, `@raw/plugin_instruction`, 构建日期), 二者的分离 MUST 保持, 以便 JVM 测试覆盖映射.
 - `name` 与不可翻译的 `app_name` 一致; `description` 来自当前 locale 的 `plugin_description`; `versionName` / `versionCode` 来自 `PackageInfo`; `versionDate` 来自 `plugin_version_date` (`MMM d, yyyy`, `GMT+08:00`); `id` / `engine` / `variant` 与第 2 节一致.
-- `capabilities` 至少包含 `PluginCapabilityKeys.REQUIRES_HOST_VERSION` (Long). 路线图 P2.5 起追加 `MailCapabilityKeys` 的契约版本, 协议集合, 认证机制, 特性集合与预设表版本, 宿主先读取能力再调用新方法, 不通过捕获异常猜测协议版本.
+- `capabilities` 包含 `PluginCapabilityKeys.REQUIRES_HOST_VERSION` (Long) 与 `MailCapabilityKeys` 的契约版本 (Int), 协议集合, 认证机制, 特性集合 (String 数组), 预设表版本 (Int) 与邮件库版本 (String), 由 `AngusMailPlugin` 的常量单点定义 (`capabilitiesBundle()`); 宿主先读取能力再调用新方法, 不通过捕获异常猜测协议版本.
 
 ## 8. Binder 与公共 API
 
