@@ -149,7 +149,7 @@ AutoJs6-Plugin-Angus-Mail/
 - `AngusMailPluginInfoService` 与 `AngusMailPluginService` MUST `exported=true`, 受 PLUGIN 权限保护, 声明 `requiresHostVersion` meta-data (与 `AngusMailPlugin.REQUIRED_HOST_VERSION` 一致), 运行在默认进程.
 - 所有对外组件逐项审查 `android:exported`; 除契约入口外不得导出其他组件. 独立设置页 (P4) 若需被宿主打开, 使用 PLUGIN 权限保护的显式 action.
 - `android:usesCleartextTraffic` 保持默认 (false), Manifest 注释 MUST 保留该说明: 明文 IMAP / POP3 / SMTP 只在脚本显式 `tls: 'none'` 时由 socket 层决定, 与网络安全策略无关; 插件不发起任何 HTTP 请求.
-- 权限清单只包含 PLUGIN, INTERNET, ACCESS_NETWORK_STATE; 路线图 P4 的 "忽略电池优化" 引导按钮 (D27) 落地时追加 `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`, 只在用户点击时发起系统请求, 不在启动时弹窗. 新增权限必须在 README 安全章节与 changelog 说明理由.
+- 权限清单只包含 PLUGIN, INTERNET, ACCESS_NETWORK_STATE 与 `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` (路线图 P4.6 的 "忽略电池优化" 引导按钮, D27: 只在用户点击时发起系统请求, 不在启动时弹窗, 不作为任何功能的前置条件). 新增权限必须在 README 安全章节与 changelog 说明理由.
 - 在 ColorOS 等会保持新装应用停止状态的设备上 SHOULD 做真实激活验收; 未执行时在路线图如实记录 `未执行真实设备激活验证`.
 
 ## 7. PluginInfo 与能力协商
