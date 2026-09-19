@@ -27,7 +27,7 @@
 | 专用 API | `mail-api` (宿主 `plugin-api/mail-api`, AIDL 包 `org.autojs.plugin.mail.api`, Binder descriptor `org.autojs.plugin.mail.api.IMailPlugin`; 路线图 P1.1 落地后以 AAR 形式进入 `libs/`) |
 | 最低宿主 versionCode | `AngusMailPlugin.REQUIRED_HOST_VERSION` (5282, 交付 `mail-api` 契约模块与宿主客户端的 6.8.0 宿主构建; 路线图 P1.4 回填, 与 `MailIds.REQUIRED_HOST_VERSION_CODE` 一致) |
 | 邮件库 | Eclipse Angus Mail `org.eclipse.angus:jakarta.mail` 2.0.5 + `angus-activation` 2.0.3 + `jakarta.activation-api` 2.1.4 (路线图 D2) |
-| 平台版本插件 | `io.github.supermonster003.autojs6-platform-versions` 1.8.2 |
+| 平台版本插件 | `io.github.supermonster003.autojs6-platform-versions` 1.8.3 |
 | 发布文件名 | `autojs6-plugin-angus-mail-v{VERSION_NAME}-{CRC32}.apk` (单 APK) |
 
 ## 3. 工作区与提交
@@ -101,7 +101,7 @@ AutoJs6-Plugin-Angus-Mail/
 
 ### 5.1 在线平台版本插件
 
-- MUST 使用在线仓库中的 `io.github.supermonster003.autojs6-platform-versions` (当前 1.8.2). 升级时先确认新版本已能从公共仓库解析, 并与其他官方插件仓库统一升级.
+- MUST 使用在线仓库中的 `io.github.supermonster003.autojs6-platform-versions` (当前 1.8.3). 升级时先确认新版本已能从公共仓库解析, 并与其他官方插件仓库统一升级.
 - 禁止使用 `mavenLocal()`, 禁止本地平台版本实现, 禁止提交 `gradle/data` 消费端覆盖.
 - 平台插件只在根 `settings.gradle.kts` 应用一次, 且整个 `plugins` 块位于 `includeBuild("build-logic")` 之前; `build-logic/settings.gradle.kts` 不应用它.
 - 根 `build.gradle.kts` 用 `System.getProperty("gradle.agp.version")` 与 `gradle.kotlin.version` 声明模块实际使用的插件 (`com.android.application`, `org.jetbrains.kotlin.jvm`, `org.jetbrains.kotlin.plugin.serialization`) 并 `apply false`; 模块只应用插件, 不硬编码版本. 版本逃生门只用 `version.properties` 的 `OVERRIDDEN_*`, 常规构建保持 `NONE`.
