@@ -92,6 +92,7 @@ AutoJs6-Plugin-Angus-Mail/
 |-- AGENTS.md, ROADMAP.md, README.md (生成, 简体中文), LICENSE (MPL-2.0), THIRD_PARTY_NOTICES.md
 |-- build.gradle.kts, settings.gradle.kts, gradle.properties, version.properties
 |-- mail-test-accounts.properties   维护者本地的真实测试账户, Git 忽略, 永不入库
+|-- oauth-clients.properties     维护者的 OAuth 2.0 客户端 id 与租户 (路线图 P9), Git 忽略, 构建时注入
 `-- sign.properties             本地签名配置, Git 忽略
 ```
 
@@ -148,7 +149,8 @@ AutoJs6-Plugin-Angus-Mail/
 - `WakeActivity` MUST 为 `exported=true`, `Theme.NoDisplay`, `excludeFromRecents`, `finishOnTaskLaunch`, 受 PLUGIN 权限保护, 响应 `org.autojs.plugin.action.WAKE` + DEFAULT category, 启动后立即结束, 不做任何副作用.
 - `AngusMailPluginInfoService` 与 `AngusMailPluginService` MUST `exported=true`, 受 PLUGIN 权限保护, 声明 `requiresHostVersion` meta-data (与 `AngusMailPlugin.REQUIRED_HOST_VERSION` 一致), 运行在默认进程.
 - 所有对外组件逐项审查 `android:exported`; 除契约入口外不得导出其他组件. 独立设置页 (P4) 若需被宿主打开, 使用 PLUGIN 权限保护的显式 action. 唯一例外是 P8 的 `trigger.BootReceiver` (`BOOT_COMPLETED` 要求 exported, Manifest 默认 `enabled=false`, 只由守望页面的开机自启开关经 `PackageManager.setComponentEnabledSetting` 打开); `trigger.MailWatchService` 不导出.
-- `android:usesCleartextTraffic` 保持默认 (false), Manifest 注释 MUST 保留该说明: 明文 IMAP / POP3 / SMTP 只在脚本显式 `tls: 'none'` 时由 socket 层决定, 与网络安全策略无关; 插件不发起任何 HTTP 请求.
+- `android:usesCleartextTraffic` 保持默认 (false), Manifest 注释 MUST 保留该说明: 明文 IMAP / POP3 / SMTP 只在脚本显式 `tls: 'none'` 时由 socket 层决定, 与网络安全策略无关; 插件不发起任何 HTTP 请求, 唯一例外是路线图 P9 浏览器登录的令牌端点 (`oauth.HttpsFormPoster`, 只接受 `https`, 只向 `OAuthProviders` 表中的 Google / Microsoft 端点 POST 表单, 不跟随重定向, 响应体 64 KiB 上限).
+- P9 的两个 Activity: `oauth.OAuthSignInActivity` 不导出 (`singleTop`, 父页为账户编辑器), `oauth.OAuthRedirectActivity` MUST 导出且无权限 (浏览器投递重定向), `Theme.NoDisplay` + `excludeFromRecents`, 只响应两个 VIEW / DEFAULT / BROWSABLE filter (`${applicationId}://oauth2/microsoft` 与 `${oauthGoogleScheme}:/oauth2redirect`), 只把 URI 转发给登录页 (`CLEAR_TOP | SINGLE_TOP`) 后结束, 不做任何判断; `state` 校验在登录页完成, 不匹配的重定向被拒绝且不回显. 客户端 id 与租户来自根目录 Git 忽略的 `oauth-clients.properties` (`googleClientId` / `microsoftClientId` / `microsoftTenant`), 经 `resValue` 与 manifest 占位符 `oauthGoogleScheme` 注入, MUST NOT 写入源码或资源; 缺失时登录项禁用.
 - 权限清单只包含 PLUGIN, INTERNET, ACCESS_NETWORK_STATE, `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` (路线图 P4.6 的 "忽略电池优化" 引导按钮, D27: 只在用户点击时发起系统请求, 不在启动时弹窗, 不作为任何功能的前置条件) 以及 P8 后台守望的四项: `FOREGROUND_SERVICE` 与 `FOREGROUND_SERVICE_SPECIAL_USE` (守望前台服务, 类型 `specialUse`, 子类型 `mail_background_watch`, D42), `POST_NOTIFICATIONS` (只在守望页面启用守望时申请), `RECEIVE_BOOT_COMPLETED` (守望页面的开机自启开关, 默认关闭). `ManifestContractTest` 断言权限集合精确; 新增权限必须在 README 安全章节与 changelog 说明理由.
 - 在 ColorOS 等会保持新装应用停止状态的设备上 SHOULD 做真实激活验收; 未执行时在路线图如实记录 `未执行真实设备激活验证`.
 
@@ -176,6 +178,7 @@ AutoJs6-Plugin-Angus-Mail/
 - 每个 `jakarta.mail.Session` 只服务一个账户与一个协议, 由 `MailSessionFactory` 创建, `debug=false`; `options.debug` (路线图 D28) 只经 `onProgress` 输出脱敏摘要, 永不打开 Jakarta 的 `mail.debug`.
 - TLS 默认开启 (SSL 或 STARTTLS 由预设或脚本指定); `starttls.required=true`, 不做机会式降级; `tls.trustAll` (D25) 只对单个账户生效, 同时关闭主机名校验并把会话标记为 `insecure`, 不提供全局开关.
 - 认证机制固定为脚本声明的机制 (`LOGIN PLAIN` 或 `XOAUTH2`), 不回退; 认证失败的异常消息不得含密码或令牌.
+- 浏览器登录 (路线图 P9, D44): OAuth 2.0 授权码 + PKCE (`S256`), 公共客户端无 secret; `TokenClient` 的错误消息与 details 不得含 `code`, verifier 或令牌; 刷新只在剩余不足 `OAuthTokens.REFRESH_MARGIN_MS` 时进行且按账户串行; Microsoft 的刷新重复 scope, Google 不带; 撤销只对提供撤销端点的服务商发起 (Google), 本地先作废记录.
 - 超时: 连接 / 读 / 写都设置 (`MailAccount.timeoutMillis`), 不允许无限期阻塞; 监听 (P5) 与后台守望 (P8) 的重连使用指数退避.
 - 出站连接只指向脚本或预设给出的主机; 插件不做 DNS 之外的任何发现, 不上报遥测.
 - 服务商预设 (`providers.json`) 只包含公开的主机 / 端口 / TLS / 认证提示, 不含任何账户.
@@ -228,6 +231,7 @@ AutoJs6-Plugin-Angus-Mail/
 - 设置页 (`AccountsActivity` 等) SHOULD 跟随宿主的语言, 夜间模式和主题色, 宿主配置不可用时安全回退; 密码 / 令牌输入以 `CharArray` 读取, 界面最多显示脱敏后的尾 4 位, 不在截图或最近任务缩略图中泄露.
 - 设置页 MUST 提供独立的 `发行历史` 入口, 按当前 locale 读取 `doc/CHANGELOG-{LANGUAGE_TAG}.md`, 找不到时回退英语; 1.0.0 不做插件内更新检查, 更新跟随宿主插件中心 (路线图 Q6).
 - "忽略电池优化" 引导按钮 (D27) 只解释用途并转到系统对话框, 不自动请求, 不作为监听 (P5) 或后台守望 (P8) 的前置条件.
+- 浏览器登录的账户 (P9) 以 `SecretKind.OAUTH2` 保存整份令牌文档 (访问 / 刷新令牌, 过期时刻), 账户文档只带 `oauth` 元数据; 所有别名会话 MUST 经 `oauth.AccountSecrets.withUsableSecret` 取访问令牌 (刷新在插件进程内完成), 令牌从不进 Binder 字段 (`MailBundles.secret` 对 `OAUTH2` 返回 null), `listSavedAccounts` 只报告 `oauth` 元数据; 登录结果在进程内 `PendingGrants` 暂存 10 分钟, 不写入 Bundle / Intent extras.
 - 后台守望 (P8) 只运行已保存别名的账户, 秘密在插件进程内解密; 守望配置与触发记录 (至多 `MAX_TRIGGER_RECORDS` 条信封摘要, 不含正文) 存于 `noBackupFilesDir/mail-triggers/`; 发往宿主的 `org.autojs.autojs6.action.MAIL_TRIGGER` 广播是显式 Intent (`setPackage` 宿主), 以 PLUGIN 权限投递, 只携带信封文档; 有活动订阅者时不广播.
 - 所有界面覆盖无障碍标签, RTL, 大字体, 夜间模式与进程恢复.
 
@@ -246,7 +250,8 @@ AutoJs6-Plugin-Angus-Mail/
 ### 15.2 `app` JVM 单元测试 (`app/src/test`)
 
 - `AngusMailPluginRuntimeInfoTest`: PluginInfo 纯数据映射, 身份常量, 与 `.readme/common.json` / `app/build.gradle.kts` 发布值一致.
-- `ManifestContractTest`: Manifest 与 `AngusMailPlugin` 常量一致 (权限集合精确, queries, Wake Activity, 两个服务的 action / category / 进程 / requiresHostVersion, 无 receiver / provider).
+- `ManifestContractTest`: Manifest 与 `AngusMailPlugin` 常量一致 (权限集合精确, queries, Wake Activity, 两个服务的 action / category / 进程 / requiresHostVersion, 无 receiver / provider); P9 起再断言 `OAuthRedirectActivity` 只响应两个重定向 scheme 且登录页 `singleTop`.
+- `SecretAuditTest` (mail-core) 扫描 `mail-core` 与 `app` 的主源码: 禁止 `Log` / `println` / `printStackTrace` / Jakarta debug; 例外只有 `STATE_LOGGERS` 清单 (守望与 OAuth 的状态日志文件), 其中每一行日志的插值不得含 secret / password / token / verifier / code / address / subject / body / email 等词 (`SECRET_WORDS`); 新增日志行 MUST 只插值 id, 状态, 计数与时长.
 - `ApplicationTextPunctuationTest`: 打包与生成文本只使用 ASCII 标点.
 - `StringResourceParityTest`: 10 语言键集合一致, 按名排序, `plugin_description` 无句尾标点, `locales_config.xml` 与语言集合一致.
 - `MailCoreContractParityTest`: `:mail-core` 镜像的错误码 (`MailErrorCode`), 上限 (`MailLimits`), 枚举 id 与能力值与 `mail-api` 契约逐项一致 (`:mail-core` 不能依赖 AAR, 镜像靠这个测试守住).
