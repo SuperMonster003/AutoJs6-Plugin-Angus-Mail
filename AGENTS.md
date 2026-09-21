@@ -80,7 +80,7 @@ AutoJs6-Plugin-Angus-Mail/
 |-- .github/workflows/          build.yml, markdown.yml
 |-- .python/                    generate_markdown.py (+ .bat), check_markdown.bat, generate_launcher_icons.py
 |-- .readme/                    common.json, lang_*.json x 10, template_readme.md, template_plugin_instruction.md, README-*.md (生成)
-|-- app/                        Android 插件 (Binder 服务, 账户存储, 设置页, 资源, JVM 与 instrumentation 测试)
+|-- app/                        Android 插件 (Binder 服务, 账户存储, 设置页, 后台守望 trigger/, 资源, JVM 与 instrumentation 测试)
 |   |-- sm003.jks               本地签名密钥, Git 忽略
 |   `-- src/{main,test,androidTest}
 |-- build-logic/                org.autojs.build.{utils,versions,signs,jvm-convention,...} 约定插件
@@ -147,9 +147,9 @@ AutoJs6-Plugin-Angus-Mail/
 - Manifest MUST 声明 `org.autojs.permission.PLUGIN`, `<queries>` 宿主包名, `org.autojs.plugin.WAKE_ACTIVITY` 与 `org.autojs.plugin.info.AUTHOR` meta-data, `NATIVE_PAGE_ALIGNMENT=0`.
 - `WakeActivity` MUST 为 `exported=true`, `Theme.NoDisplay`, `excludeFromRecents`, `finishOnTaskLaunch`, 受 PLUGIN 权限保护, 响应 `org.autojs.plugin.action.WAKE` + DEFAULT category, 启动后立即结束, 不做任何副作用.
 - `AngusMailPluginInfoService` 与 `AngusMailPluginService` MUST `exported=true`, 受 PLUGIN 权限保护, 声明 `requiresHostVersion` meta-data (与 `AngusMailPlugin.REQUIRED_HOST_VERSION` 一致), 运行在默认进程.
-- 所有对外组件逐项审查 `android:exported`; 除契约入口外不得导出其他组件. 独立设置页 (P4) 若需被宿主打开, 使用 PLUGIN 权限保护的显式 action.
+- 所有对外组件逐项审查 `android:exported`; 除契约入口外不得导出其他组件. 独立设置页 (P4) 若需被宿主打开, 使用 PLUGIN 权限保护的显式 action. 唯一例外是 P8 的 `trigger.BootReceiver` (`BOOT_COMPLETED` 要求 exported, Manifest 默认 `enabled=false`, 只由守望页面的开机自启开关经 `PackageManager.setComponentEnabledSetting` 打开); `trigger.MailWatchService` 不导出.
 - `android:usesCleartextTraffic` 保持默认 (false), Manifest 注释 MUST 保留该说明: 明文 IMAP / POP3 / SMTP 只在脚本显式 `tls: 'none'` 时由 socket 层决定, 与网络安全策略无关; 插件不发起任何 HTTP 请求.
-- 权限清单只包含 PLUGIN, INTERNET, ACCESS_NETWORK_STATE 与 `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` (路线图 P4.6 的 "忽略电池优化" 引导按钮, D27: 只在用户点击时发起系统请求, 不在启动时弹窗, 不作为任何功能的前置条件). 新增权限必须在 README 安全章节与 changelog 说明理由.
+- 权限清单只包含 PLUGIN, INTERNET, ACCESS_NETWORK_STATE, `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` (路线图 P4.6 的 "忽略电池优化" 引导按钮, D27: 只在用户点击时发起系统请求, 不在启动时弹窗, 不作为任何功能的前置条件) 以及 P8 后台守望的四项: `FOREGROUND_SERVICE` 与 `FOREGROUND_SERVICE_SPECIAL_USE` (守望前台服务, 类型 `specialUse`, 子类型 `mail_background_watch`, D42), `POST_NOTIFICATIONS` (只在守望页面启用守望时申请), `RECEIVE_BOOT_COMPLETED` (守望页面的开机自启开关, 默认关闭). `ManifestContractTest` 断言权限集合精确; 新增权限必须在 README 安全章节与 changelog 说明理由.
 - 在 ColorOS 等会保持新装应用停止状态的设备上 SHOULD 做真实激活验收; 未执行时在路线图如实记录 `未执行真实设备激活验证`.
 
 ## 7. PluginInfo 与能力协商
@@ -228,6 +228,7 @@ AutoJs6-Plugin-Angus-Mail/
 - 设置页 (`AccountsActivity` 等) SHOULD 跟随宿主的语言, 夜间模式和主题色, 宿主配置不可用时安全回退; 密码 / 令牌输入以 `CharArray` 读取, 界面最多显示脱敏后的尾 4 位, 不在截图或最近任务缩略图中泄露.
 - 设置页 MUST 提供独立的 `发行历史` 入口, 按当前 locale 读取 `doc/CHANGELOG-{LANGUAGE_TAG}.md`, 找不到时回退英语; 1.0.0 不做插件内更新检查, 更新跟随宿主插件中心 (路线图 Q6).
 - "忽略电池优化" 引导按钮 (D27) 只解释用途并转到系统对话框, 不自动请求, 不作为监听 (P5) 或后台守望 (P8) 的前置条件.
+- 后台守望 (P8) 只运行已保存别名的账户, 秘密在插件进程内解密; 守望配置与触发记录 (至多 `MAX_TRIGGER_RECORDS` 条信封摘要, 不含正文) 存于 `noBackupFilesDir/mail-triggers/`; 发往宿主的 `org.autojs.autojs6.action.MAIL_TRIGGER` 广播是显式 Intent (`setPackage` 宿主), 以 PLUGIN 权限投递, 只携带信封文档; 有活动订阅者时不广播.
 - 所有界面覆盖无障碍标签, RTL, 大字体, 夜间模式与进程恢复.
 
 ## 15. 测试要求
